@@ -24,3 +24,48 @@ Containers are runnable instances of images. When you run an image, it creates a
 Containers are isolated processes, they run independently of any other process on the machine.
 
 By sharing an image, multiple containers can be created and run on multiple machines.
+
+## Parent Images and Docker Hub
+Images are made up of several layers.
+
+The parent image, including the OS and sometimes the runtime environment, is the first layer.
+
+The next layers can be anything else you would add to your image, such as source code, dependencies and commands.
+
+Docker Hub is an online respository of Docker Images. You pull images from Docker Hub using `docker pull IMAGE_NAME`. You can add tags to specify which version of an OS you want and which underlying OS.
+
+If, for example, you need a specific version of Node.js, it's better to specify a version or Docker will use the latest version.
+
+## Dockerfiles
+To create your own image, you create a Dockerfile.
+
+In general, each line in the Dockerfile represents a different layer in the image.
+
+First, you specify which parent image to use, using `FROM`.
+
+The which files you want to copy into the image and where to copy them to. Usually, you won't copy into the root directory to avoid clashing with other files.
+
+You can specify a working directory for the image.
+
+Next, specify what dependencies you want to install. You can specify what commands are run when the image is made using `RUN`. 
+
+You also need a command to run the application in the container using `CMD`  and an array of strings in double quotes.
+
+To communicate with the app, you also need to expose a port on the container using `EXPOSE`. This is used to set up port mapping.
+
+```Dockerfile
+FROM node:17-alpine
+
+WORKDIR /app
+
+COPY . .
+
+RUN npm install
+
+# required for docker desktop port mapping
+EXPOSE 4000
+
+CMD ["node", "app.js"]
+```
+
+To build the image use `docker build -t IMAGE_NAME .`
