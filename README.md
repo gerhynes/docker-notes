@@ -69,3 +69,31 @@ CMD ["node", "app.js"]
 ```
 
 To build the image use `docker build -t IMAGE_NAME .`
+
+## .dockerignore
+The `.dockerignore` file lets you specify any files or folders you want Docker to ignore when it copies files over to the image, for example node modules or logs.
+
+## Starting and Stopping Containers
+When you run an image from Docker Desktop, you have the choice to specify extra settings, such as:
+- a container name
+- ports to map to
+- volumes
+
+From the command line:
+
+List images with `docker images`
+
+The run an image and create a new container, you need either the name or id of that image: `docker run IMAGE_NAME/ID`.
+
+Any options go before the image name/id:
+- `--name CONTAINER_NAME` lets you name the container
+- `-p PORT_ON_COMPUTER:PORT_EXPOSED_BY_CONTAINER` lets you map ports from your computer to the container
+- `-d` runs the container in detached mode, leaving your terminal detached from the process
+
+View running processes with `docker ps`
+
+View all containers with `docker ps -a`
+
+Stop a container with `docker stop CONTAINER_NAME/ID`
+
+Restart a container with `docker start CONTAINER_NAME/ID` (you don't need to reconfigure the options)
