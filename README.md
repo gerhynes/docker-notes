@@ -97,3 +97,29 @@ View all containers with `docker ps -a`
 Stop a container with `docker stop CONTAINER_NAME/ID`
 
 Restart a container with `docker start CONTAINER_NAME/ID` (you don't need to reconfigure the options)
+
+## Layer Caching
+Once an image is created, it's read-only. So if you make any changes to your application you'll need to create a new image.
+
+Every time Docker builds an image, it stores each layer in a cache. When you build an image after this, before Docker starts the process it looks in the cache and tries to find a cached image that it can use for the new image it's creating.
+
+If you have changed a layer, all layers built on top of that will be affected too.
+
+If the dependencies haven't changed, however, it can make sense to copy over the ``package.json`` and run ``npm install`` before copying the files. This way the dependencies can be cached, speeding up build times.
+
+```Dockerfile
+FROM node:17-alpine
+
+WORKDIR /app
+
+# copy package.json to working directory
+COPY package.json .
+
+RUN npm install
+
+COPY . .
+
+EXPOSE 4000
+
+CMD ["node", "app.js"]
+```
