@@ -123,3 +123,30 @@ EXPOSE 4000
 
 CMD ["node", "app.js"]
 ```
+
+## Managing Images and Containers
+`docker images` lists all the images you have.
+`docker processes` lists all the running containers.
+`docker ps-a` lists all containers.
+`docker image rm IMAGE_NAME` deletes an image (if it isn't being used by a container).
+`docker image rm IMAGE_NAME -f` will delete an image even if it being used by a container.
+`docker container rm CONTAINER_NAME` deletes a container.
+`docker system prune -a` will remove all containers, images and volumes.
+
+In Docker, versions are denoted by tags, letting you create multiple versions of images with certain variations.
+
+To create an image with a tag, use `docker build -t IMAGE_NAME:TAG .`
+
+To run a container for a specific image version, specify the tag `docker run --name CONTAINER_NAME -p 4000:4000 IMAGE_NAME:TAG` 
+
+## Volumes
+`docker run` will always run the image via a new container. `docker start` will run an existing container. 
+
+If you stop a container, make changes to the app within it, and restart the container it won't reflect changes made to the app. This is because the image in the container exists and once an image is made it becomes read-only. To see the changes to the app, you need to create a new image and run that image in a new container.
+
+Volumes are a way around this. Volumes let you specify folders on your host computer that can be made available to running containers. You can map these folders on your host computer to specific folders in the container so that if something changes in the folders on your computer, those changes would also be reflected in the container.
+
+If you mirror the root folder of a project on your host computer to the working directory of the container, you would see every update without having to build a new image.
+
+Importantly, the image itself does not change. Volumes just map directories between a container and the host computer. If you to update the image to share it or use it to create new conatiners, you'd have to recreate the image using `docker build`. Volumes are useful during development and testing.
+
