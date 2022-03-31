@@ -148,5 +148,17 @@ Volumes are a way around this. Volumes let you specify folders on your host comp
 
 If you mirror the root folder of a project on your host computer to the working directory of the container, you would see every update without having to build a new image.
 
-Importantly, the image itself does not change. Volumes just map directories between a container and the host computer. If you to update the image to share it or use it to create new conatiners, you'd have to recreate the image using `docker build`. Volumes are useful during development and testing.
+Importantly, the image itself does not change. Volumes just map directories between a container and the host computer. If you to update the image to share it or use it to create new conatiners, you'd have to recreate the image 
+using `docker build`. Volumes are useful during development and testing.
 
+To set up a volume, use the `-v` flag, an absolute path to the directory on the host computer and an absolute path to the directory in the container.
+
+```
+docker run --name myapp_c_nodemon -p 4000:4000 --rm -v C:\Users\Gerard\Desktop\docker-crash-course\api:/app myapp:nodemon
+```
+
+If you want to prevent a particular directory in the container form being mapped to the host computer (for example, to keep the node_modules from being deleted/changed) you can use an anonymous volume. This maps the directory in the container to a directory managed by Docker. It will override the previous mapping as its path is more specific.
+
+```
+docker run --name myapp_c_nodemon -p 4000:4000 --rm -v C:\Users\Gerard\Desktop\docker-crash-course\api:/app -v /app/node_modules myapp:nodemon
+```
