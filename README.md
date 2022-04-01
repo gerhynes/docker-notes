@@ -148,8 +148,7 @@ Volumes are a way around this. Volumes let you specify folders on your host comp
 
 If you mirror the root folder of a project on your host computer to the working directory of the container, you would see every update without having to build a new image.
 
-Importantly, the image itself does not change. Volumes just map directories between a container and the host computer. If you to update the image to share it or use it to create new conatiners, you'd have to recreate the image 
-using `docker build`. Volumes are useful during development and testing.
+Importantly, the image itself does not change. Volumes just map directories between a container and the host computer. If you to update the image to share it or use it to create new conatiners, you'd have to recreate the image using `docker build`. Volumes are useful during development and testing.
 
 To set up a volume, use the `-v` flag, an absolute path to the directory on the host computer and an absolute path to the directory in the container.
 
@@ -162,3 +161,31 @@ If you want to prevent a particular directory in the container form being mapped
 ```
 docker run --name myapp_c_nodemon -p 4000:4000 --rm -v C:\Users\Gerard\Desktop\docker-crash-course\api:/app -v /app/node_modules myapp:nodemon
 ```
+
+## Docker Compose
+Sometimes you might want multiple programmes to run at once in separate containers and communicate with each other (for example, an API, database and frontend). 
+
+Docker Compose is a tool built into Docker that lets you make a single `docker-compose.yaml` file that contains all the container configuration of your project. 
+
+Make the Docker Compose file in the root directory shared by all the projects you want to run in tandem.
+
+Docker Compose creates the image and runs the container for it.
+
+```yaml
+version: "3.8"
+services: 
+	api: 
+		build: ./api
+		container_name: api_c
+		ports: 
+			- "4000:4000"
+		volumes: 
+			- ./api:/app
+			- ./app/node_modules
+```
+
+To run the Docker Compose file, use `docker-compose up`.
+
+To stop and delete the container while keeping the images and volumes, use `docker-compose down`.
+
+To remove all images and volumes, use `docker-compose down --rmi all -v`
