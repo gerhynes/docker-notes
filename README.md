@@ -73,6 +73,15 @@ To build the image use `docker build -t IMAGE_NAME .`
 ## .dockerignore
 The `.dockerignore` file lets you specify any files or folders you want Docker to ignore when it copies files over to the image, for example node modules or logs.
 
+```
+node_modules
+Dockerfile
+.dockerignore
+.git
+.gitignore
+docker-compose*
+```
+
 ## Starting and Stopping Containers
 When you run an image from Docker Desktop, you have the choice to specify extra settings, such as:
 - a container name
@@ -171,6 +180,8 @@ Make the Docker Compose file in the root directory shared by all the projects yo
 
 Docker Compose creates the image and runs the container for it.
 
+Each container you want to refer to is a `service`.
+
 ```yaml
 version: "3.8"
 services: 
@@ -184,8 +195,119 @@ services:
 			- ./app/node_modules
 ```
 
-To run the Docker Compose file, use `docker-compose up`.
+To run the Docker Compose file, use `docker-compose up` (with `-d` if you want to run it in detached mode).
 
 To stop and delete the container while keeping the images and volumes, use `docker-compose down`.
 
-To remove all images and volumes, use `docker-compose down --rmi all -v`
+To remove all images and volumes, use `docker-compose down --rmi all -v`.
+
+With Docker, every service (whether it's an API, a database or a frontend application) runs in an independent, isolated container.
+
+If you run `docker-compose up` again, it won't rebuild the image. You need to tell it if you've made changes and want to rebuild the image.
+
+`docker-compose up --build` will force a rebuild of the image.
+
+## Sharing Images on Docker Hub
+To share an image on Docker Hub, go to `hub.docker.com` and sign in.
+
+Select `Create a Repository` and give it a name. From your terminal, use `docker login` to log into Docker and then use `docker push REPOSITORY_NAME:TAG_NAME` to push the image to Docker Hub. 
+
+Use `docker pull REPOSITORY_NAME:TAG_NAME` to download the mage from Docker Hub.
+
+## docker exec
+`docker exec` lets you run commands in a running container. For example, you can execute an interactive bash shell on the container.
+
+```bash
+# docker exec [OPTIONS] CONTAINER COMMAND [ARG...]
+
+docker exec -it node-docker_node-app_1 bash
+```
+
+## Development vs Production Configs
+You can set up multiple `docker-compose` files for different environments, such as `docker-compose.dev.yml` and `docker-compose.prod.yml`. Any configuration that is shared between every environment should go in a main `docker-compose` file.
+
+```yml
+# docker-compose.yml
+version: "3"
+services:
+  node-app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+```
+
+```yml
+# docker-compose.dev.yml
+version: "3"
+services:
+  node-app:
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+```
+
+```yml
+# docker-compose.prod.yml
+version: "3"
+services:
+  node-app:
+    environment:
+      - NODE_ENV=production
+    command: node index.js
+```
+
+You can point to multiple `docker-compose` files using the `-f` (file) flag. Order matters, as the files you pass in will be run in order.
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
+
+You can then stop them with `docker-compose down`.
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml down -v
+```
+
+You can tell your Dockerfile whether you're running in a development or production environment using an embedded bash script in your `package.json` and by passing the `NODE_ENV` argument in `docker-compose`.
+
+```Dockerfile
+FROM node:16
+
+WORKDIR /app
+
+COPY package.json .
+
+ARG NODE_ENV
+
+RUN if [ "$NODE_ENV" = "development" ]; \
+      then npm install; \
+      else npm install --only=production; \
+      fi
+
+COPY . ./
+
+ENV PORT 3000
+
+EXPOSE $PORT
+
+CMD ["node", "index.js"]
+```
+
+```yml
+# docker-compose.prod.yml
+version: "3"
+services:
+  node-app:
+    build:
+      context: .
+      args:
+        NODE_ENV: production
+    environment:
+      - NODE_ENV=production
+    command: node index.js
+```
