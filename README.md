@@ -184,13 +184,13 @@ Each container you want to refer to is a `service`.
 
 ```yaml
 version: "3.8"
-services: 
-	api: 
+services:
+	api:
 		build: ./api
 		container_name: api_c
-		ports: 
+		ports:
 			- "4000:4000"
-		volumes: 
+		volumes:
 			- ./api:/app
 			- ./app/node_modules
 ```
@@ -311,3 +311,63 @@ services:
       - NODE_ENV=production
     command: node index.js
 ```
+
+## Working with Multiple Containers
+If you need to run an additional container as part of your application, for example a database, you can add this as a service in your `docker-compose`.
+
+Make sure to pass in any environment variables it requires.
+
+```YAML
+version: "3"
+services:
+  node-app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+  mongo:
+    image: mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=ger
+      - MONGO_INITDB_ROOT_PASSWORD=mypassword
+```
+
+You can connect to the Mongo shell on the MongoDB container using `docker exec -it name_of_container mongo -u "username" -p "password"`.
+
+If you run `docker-compose down` you'll delete the container, including the database.
+
+You use named volumes to save this information. A named volume can be used by multiple services, so you need to declare it at the bottom of you `docker-compose` file.
+
+```YAML
+		volumes:
+      - mongo-db:/data/db #named volume
+     
+volumes:
+  mongo-db:
+```
+
+When you use `docker-compose down` don't include the `-v` flag or it'll delete the container.
+
+### IP Addresses
+Docker automatically assigns an IP address to each container.
+
+Use `docker inspect container_name` to view (a lot of) data about your container. Under `Networks`, you'll see `IPAddress`.
+
+You can use `docker logs container_name` to connect to a container and have access to its logs.
+
+Docker makes it relatively easy to communicate between containers on the same custom network. When you have a custom network, you have DNS.
+
+Use `docker network ls` to view networks. `bridge` and `host` are the defaults that come with Docker.
+
+You can refer to a container's IP address based off it's service name.
+
+```JavaScript
+// IP address
+mongoose.connect("mongodb://ger:mypassword@172.25.0.2:27017/?authSource=admin")
+
+// service name
+mongoose.connect("mongodb://ger:mypassword@mongo:27017/?authSource=admin")
+```
+
+Use `docker network inspect custom_network_name` to get more information on the custom network.
