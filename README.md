@@ -371,3 +371,116 @@ mongoose.connect("mongodb://ger:mypassword@mongo:27017/?authSource=admin")
 ```
 
 Use `docker network inspect custom_network_name` to get more information on the custom network.
+
+### Container Bootup Order
+If you spin up an app and its database at the same time, you can run into race conditions. Use `depends_on` to tell Docker if a container depends on another container being started first. 
+
+You should still include logic to cover this in your application since Docker can only tell if the container was created, not if say the database is ready for connections.
+
+If you run `docker-compose up` while a container is running, Docker is smart enought to apply changes to the running container. You can use `docker-compose up --build` if you've added new dependencies.
+
+If you do this, you do need pass `-V` to tell Docker to recreate anonymous volumes instead of retrieving data from the previous containers. 
+
+### Working with Nginx
+To get your Nginx configuration file to your Nginx container, you can configure a bind mount and sync the files.
+
+```YAML
+// docker-compose.yml
+services:
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "3000:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+```
+
+### Deploying to Production
+Make sure that all your environment values in `docker-compose` are relying on environmental variables on your production server.
+
+You can do this one variable at a time with `export`.
+
+```
+export SESSION_SECRET="YOUR_SECRET_HERE"
+```
+
+`printenv` will print all your environment variables.
+
+To ensure the environmental variables persist between reboots, you can create a `.env` file in the root of your remote server and use it to add environmental variables to your `.profile`.
+
+Open `.profile` with vi and add 
+
+```
+set -o allexport; source /root/.env; set +o allexport
+```
+
+To start your app on your production server, create a directory for it (such as `/app`), cd into it, and run:
+
+```
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build 
+```
+
+To push changes to your server, first push them to GitHub, then use `git pull` on your server to pull in the changes. 
+
+Run `docker-compose up --build` to rebuild the image and spin up a new container. If you include the name of a service, only that service and its dependencies will be rebuilt. If you pass in `--no-deps`, the dependencies, such as a database, won't be rebuilt. You can use `--force-recreate` to recreate containers even if thir configuration and images haven't changed.
+
+But you shouldn't be building your image on your production server because building an image takes resources, with longer build times as the application grows. This could starve production traffic.
+
+Yiu shoul build an image on your dev server, push this image to Docker Hub (or any other repository of images) and pull this image to your production server. The production server just needs to rebuild the container from the image.
+
+To push an image to Docker Hub you need to make sure it has the same name as the repository on Docker Hub.
+
+```
+docker image tag IMAGE_NAME DOCKER_HUB_REPOSITORY_NAME
+
+docker push DOCKER_HUB_REPOSITORY_NAME
+```
+
+In your `docker-compose.yml` you need to add an `image` pointing to the Docker Hub image.
+
+Your workflow becomes:
+- build an image on your development server
+- push the image to Docker Hub
+- pull the image to the production server
+
+#### Automation with Watchtower
+You can use Watchtower to automatically check Docker Hub for updated images and push it to your development server.
+
+```
+docker run -d --name watchtower -e WATCHTOWER_TRACE=true -e WATCHTOWER_DEBUG=true -e WATCHTOWER_POLL_INTERVAL=900 -v /var/run/docker.sock:/var/run/docker.sock containerrr/watchtower NAME_OF_CONTAINER
+```
+
+If you are referencing a private repository, you will need to log into Docker.
+
+### Container Orchestration
+During the period of tearing down a container and rebuilding it, your app will experience network downtime. `docker-compose` doesn't support rolling updates in a production context. For that, you need a container orchestrator such as Kubernetes or Docker Swarm.
+
+Container orchestrators let you spin up containers and distribute them across multiple servers. They let you verify that a new container is up and running before deleting an old container, so that you have no downtime.
+
+### Docker Swarm
+Docker Swarm is installed with Docker. It gives you a multiple node environment, with manager nodes and worker nodes.
+
+Swarm is disaled by default. Enable it with:
+
+```
+docker swarm init --advertise-addr IP_ADDRESS
+```
+
+Docker Swarm is very similar to regular Docker. Instead of working with containers, you're working with services.
+
+`docker service` lets you create, update and scale services.
+
+You can put all of your Swarm configurations in your `docker-compose` file. You can configure replication, restart policies, updates.
+
+To deploy your app using Swarm you need to create a stack.
+
+```
+docker stack deploy -c docker-compose.yml -c docker-compose.prod.yml STACK_NAME
+```
+
+`docker node ls` will let you see all the nodes. `docker stack ls` will list all the stacks.
+
+`docker stack services STACK_NAME` will list all the services on a particular stack.
+
+When it comes to creating, updating or deleting a service, Docker Swarm creates a task and pushes this task to a worker.
+
