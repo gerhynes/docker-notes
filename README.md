@@ -8,7 +8,7 @@ A container packs up everything your app needs to run, from source code to depen
 A virtual machine has its own full operating system and is typically slower, while containers share the host machine's operating system and are typically quicker.
 
 ## Images and Containers
-Images are analogous blueprints for containers. They store:
+Images are analogous to blueprints for containers. They store:
 - the runtime environment
 - application code
 - any dependencies
@@ -21,7 +21,7 @@ Images are read-only. To change them you need to create a brand new image.
 
 Containers are runnable instances of images. When you run an image, it creates a container, a process that can run your app exactly as outlined in the image.
 
-Containers are isolated processes, they run independently of any other process on the machine.
+Containers are isolated processes. They run independently of any other process on the machine.
 
 By sharing an image, multiple containers can be created and run on multiple machines.
 
@@ -32,7 +32,7 @@ The parent image, including the OS and sometimes the runtime environment, is the
 
 The next layers can be anything else you would add to your image, such as source code, dependencies and commands.
 
-Docker Hub is an online respository of Docker Images. You pull images from Docker Hub using `docker pull IMAGE_NAME`. You can add tags to specify which version of an OS you want and which underlying OS.
+Docker Hub is an online respository of Docker Images. You pull images from Docker Hub using `docker pull IMAGE_NAME`. You can add tags to specify which version of a runtime you want and which underlying OS.
 
 If, for example, you need a specific version of Node.js, it's better to specify a version or Docker will use the latest version.
 
@@ -43,13 +43,13 @@ In general, each line in the Dockerfile represents a different layer in the imag
 
 First, you specify which parent image to use, using `FROM`.
 
-The which files you want to copy into the image and where to copy them to. Usually, you won't copy into the root directory to avoid clashing with other files.
+Then which files you want to copy into the image and where to copy them to. Usually, you won't copy into the root directory to avoid clashing with other files.
 
 You can specify a working directory for the image.
 
-Next, specify what dependencies you want to install. You can specify what commands are run when the image is made using `RUN`. 
+Next, specify which dependencies you want to install. You can specify which commands are run when the image is made using `RUN`. 
 
-You also need a command to run the application in the container using `CMD`  and an array of strings in double quotes.
+You also need a command to run the application in the container. You do this using `CMD`  and an array of strings in double quotes.
 
 To communicate with the app, you also need to expose a port on the container using `EXPOSE`. This is used to set up port mapping.
 
@@ -68,7 +68,7 @@ EXPOSE 4000
 CMD ["node", "app.js"]
 ```
 
-To build the image use `docker build -t IMAGE_NAME .`
+To build the image, use `docker build -t IMAGE_NAME .`
 
 ## .dockerignore
 The `.dockerignore` file lets you specify any files or folders you want Docker to ignore when it copies files over to the image, for example node modules or logs.
@@ -92,7 +92,7 @@ From the command line:
 
 List images with `docker images`
 
-The run an image and create a new container, you need either the name or id of that image: `docker run IMAGE_NAME/ID`.
+To run an image and create a new container, you need either the name or id of that image: `docker run IMAGE_NAME/ID`.
 
 Any options go before the image name/id:
 - `--name CONTAINER_NAME` lets you name the container
@@ -112,7 +112,7 @@ Once an image is created, it's read-only. So if you make any changes to your app
 
 Every time Docker builds an image, it stores each layer in a cache. When you build an image after this, before Docker starts the process it looks in the cache and tries to find a cached image that it can use for the new image it's creating.
 
-If you have changed a layer, all layers built on top of that will be affected too.
+If you have changed a layer, all layers that are built on top of that layer will be affected too.
 
 If the dependencies haven't changed, however, it can make sense to copy over the ``package.json`` and run ``npm install`` before copying the files. This way the dependencies can be cached, speeding up build times.
 
@@ -135,11 +135,17 @@ CMD ["node", "app.js"]
 
 ## Managing Images and Containers
 `docker images` lists all the images you have.
+
 `docker processes` lists all the running containers.
+
 `docker ps-a` lists all containers.
+
 `docker image rm IMAGE_NAME` deletes an image (if it isn't being used by a container).
+
 `docker image rm IMAGE_NAME -f` will delete an image even if it being used by a container.
+
 `docker container rm CONTAINER_NAME` deletes a container.
+
 `docker system prune -a` will remove all containers, images and volumes.
 
 In Docker, versions are denoted by tags, letting you create multiple versions of images with certain variations.
@@ -151,21 +157,21 @@ To run a container for a specific image version, specify the tag `docker run --n
 ## Volumes
 `docker run` will always run the image via a new container. `docker start` will run an existing container. 
 
-If you stop a container, make changes to the app within it, and restart the container it won't reflect changes made to the app. This is because the image in the container exists and once an image is made it becomes read-only. To see the changes to the app, you need to create a new image and run that image in a new container.
+If you stop a container, make changes to the app within it, and restart the container, it won't reflect changes made to the app. This is because the image in the container exists and once an image is made it becomes read-only. To see the changes to the app, you need to create a new image and run that image in a new container.
 
 Volumes are a way around this. Volumes let you specify folders on your host computer that can be made available to running containers. You can map these folders on your host computer to specific folders in the container so that if something changes in the folders on your computer, those changes would also be reflected in the container.
 
 If you mirror the root folder of a project on your host computer to the working directory of the container, you would see every update without having to build a new image.
 
-Importantly, the image itself does not change. Volumes just map directories between a container and the host computer. If you to update the image to share it or use it to create new conatiners, you'd have to recreate the image using `docker build`. Volumes are useful during development and testing.
+Importantly, the image itself does not change. Volumes just map directories between a container and the host computer. If you want to update the image to share it or use it to create new conatiners, you'd have to recreate the image using `docker build`. Volumes are useful during development and testing.
 
-To set up a volume, use the `-v` flag, an absolute path to the directory on the host computer and an absolute path to the directory in the container.
+To set up a volume, use the `-v` flag, an absolute path to the directory on the host computer, and an absolute path to the directory in the container.
 
 ```
 docker run --name myapp_c_nodemon -p 4000:4000 --rm -v C:\Users\Gerard\Desktop\docker-crash-course\api:/app myapp:nodemon
 ```
 
-If you want to prevent a particular directory in the container form being mapped to the host computer (for example, to keep the node_modules from being deleted/changed) you can use an anonymous volume. This maps the directory in the container to a directory managed by Docker. It will override the previous mapping as its path is more specific.
+If you want to prevent a particular directory in the container from being mapped to the host computer (for example, to keep the node_modules from being deleted/changed) you can use an anonymous volume. This maps the directory in the container to a directory managed by Docker. It will override the previous mapping as its path is more specific.
 
 ```
 docker run --name myapp_c_nodemon -p 4000:4000 --rm -v C:\Users\Gerard\Desktop\docker-crash-course\api:/app -v /app/node_modules myapp:nodemon
@@ -176,7 +182,7 @@ Sometimes you might want multiple programmes to run at once in separate containe
 
 Docker Compose is a tool built into Docker that lets you make a single `docker-compose.yaml` file that contains all the container configuration of your project. 
 
-Make the Docker Compose file in the root directory shared by all the projects you want to run in tandem.
+Make the Docker Compose file in the root directory shared by all the projects that you want to run in tandem.
 
 Docker Compose creates the image and runs the container for it.
 
@@ -197,7 +203,7 @@ services:
 
 To run the Docker Compose file, use `docker-compose up` (with `-d` if you want to run it in detached mode).
 
-To stop and delete the container while keeping the images and volumes, use `docker-compose down`.
+To stop and delete the container, while keeping the images and volumes, use `docker-compose down`.
 
 To remove all images and volumes, use `docker-compose down --rmi all -v`.
 
@@ -212,7 +218,7 @@ To share an image on Docker Hub, go to `hub.docker.com` and sign in.
 
 Select `Create a Repository` and give it a name. From your terminal, use `docker login` to log into Docker and then use `docker push REPOSITORY_NAME:TAG_NAME` to push the image to Docker Hub. 
 
-Use `docker pull REPOSITORY_NAME:TAG_NAME` to download the mage from Docker Hub.
+Use `docker pull REPOSITORY_NAME:TAG_NAME` to download the image from Docker Hub.
 
 ## docker exec
 `docker exec` lets you run commands in a running container. For example, you can execute an interactive bash shell on the container.
@@ -224,7 +230,7 @@ docker exec -it node-docker_node-app_1 bash
 ```
 
 ## Development vs Production Configs
-You can set up multiple `docker-compose` files for different environments, such as `docker-compose.dev.yml` and `docker-compose.prod.yml`. Any configuration that is shared between every environment should go in a main `docker-compose` file.
+You can set up multiple `docker-compose` files for different environments, such as `docker-compose.dev.yml` and `docker-compose.prod.yml`. Any configuration that is shared between every environment should go in a main `docker-compose.yml` file.
 
 ```yml
 # docker-compose.yml
@@ -267,7 +273,7 @@ You can point to multiple `docker-compose` files using the `-f` (file) flag. Ord
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ```
 
-You can then stop them with `docker-compose down`.
+You can then stop them with `docker-compose down`. The `-v` flag will delete the volumes.
 
 ```bash
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml down -v
@@ -341,10 +347,10 @@ You use named volumes to save this information. A named volume can be used by mu
 
 ```YAML
 		volumes:
-      - mongo-db:/data/db #named volume
-     
+	    - mongo-db:/data/db #named volume
+  
 volumes:
-  mongo-db:
+	mongo-db:
 ```
 
 When you use `docker-compose down` don't include the `-v` flag or it'll delete the container.
@@ -375,11 +381,11 @@ Use `docker network inspect custom_network_name` to get more information on the 
 ### Container Bootup Order
 If you spin up an app and its database at the same time, you can run into race conditions. Use `depends_on` to tell Docker if a container depends on another container being started first. 
 
-You should still include logic to cover this in your application since Docker can only tell if the container was created, not if say the database is ready for connections.
+You should still include logic to cover this in your application since Docker can only tell if the container was created, not if, for example, the database is ready for connections.
 
-If you run `docker-compose up` while a container is running, Docker is smart enought to apply changes to the running container. You can use `docker-compose up --build` if you've added new dependencies.
+If you run `docker-compose up` while a container is running, Docker is smart enought to apply changes to the running container. You can use `docker-compose up --build` to rebuild the container if you've added new dependencies.
 
-If you do this, you do need pass `-V` to tell Docker to recreate anonymous volumes instead of retrieving data from the previous containers. 
+If you do this, you do need to pass `-V` to tell Docker to recreate anonymous volumes instead of retrieving data from the previous containers. 
 
 ### Working with Nginx
 To get your Nginx configuration file to your Nginx container, you can configure a bind mount and sync the files.
@@ -422,11 +428,11 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 To push changes to your server, first push them to GitHub, then use `git pull` on your server to pull in the changes. 
 
-Run `docker-compose up --build` to rebuild the image and spin up a new container. If you include the name of a service, only that service and its dependencies will be rebuilt. If you pass in `--no-deps`, the dependencies, such as a database, won't be rebuilt. You can use `--force-recreate` to recreate containers even if thir configuration and images haven't changed.
+Run `docker-compose up --build` to rebuild the image and spin up a new container. If you include the name of a service, only that service and its dependencies will be rebuilt. If you pass in `--no-deps`, the dependencies, such as a database, won't be rebuilt. You can use `--force-recreate` to recreate containers even if their configuration and images haven't changed.
 
 But you shouldn't be building your image on your production server because building an image takes resources, with longer build times as the application grows. This could starve production traffic.
 
-Yiu shoul build an image on your dev server, push this image to Docker Hub (or any other repository of images) and pull this image to your production server. The production server just needs to rebuild the container from the image.
+You shoul build an image on your dev server, push this image to Docker Hub (or any other repository of images) and pull this image to your production server. The production server just needs to rebuild the container from the image.
 
 To push an image to Docker Hub you need to make sure it has the same name as the repository on Docker Hub.
 
@@ -455,22 +461,22 @@ If you are referencing a private repository, you will need to log into Docker.
 ### Container Orchestration
 During the period of tearing down a container and rebuilding it, your app will experience network downtime. `docker-compose` doesn't support rolling updates in a production context. For that, you need a container orchestrator such as Kubernetes or Docker Swarm.
 
-Container orchestrators let you spin up containers and distribute them across multiple servers. They let you verify that a new container is up and running before deleting an old container, so that you have no downtime.
+Container orchestrators let you spin up containers and distribute them across multiple servers. They also let you verify that a new container is up and running before deleting an old container, so that you have no downtime.
 
 ### Docker Swarm
 Docker Swarm is installed with Docker. It gives you a multiple node environment, with manager nodes and worker nodes.
 
-Swarm is disaled by default. Enable it with:
+Swarm is disaled by default. Enable it with
 
 ```
 docker swarm init --advertise-addr IP_ADDRESS
 ```
 
-Docker Swarm is very similar to regular Docker. Instead of working with containers, you're working with services.
+Docker Swarm is very similar to regular Docker but instead of working with containers, you're working with services.
 
 `docker service` lets you create, update and scale services.
 
-You can put all of your Swarm configurations in your `docker-compose` file. You can configure replication, restart policies, updates.
+You can put all of your Swarm configurations in your `docker-compose` file. This lets you configure things such as replication, restart policies, and updates.
 
 To deploy your app using Swarm you need to create a stack.
 
